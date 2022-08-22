@@ -6,7 +6,6 @@ import dev.sora.sparky.common.inventory.ModChestMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -28,6 +27,7 @@ import net.minecraft.world.level.block.entity.*;
 import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -70,7 +70,7 @@ public class ModChestBlockEntity extends RandomizableContainerBlockEntity implem
     public ModChestBlockEntity(BlockPos blockPos, BlockState blockState) {
         super(BlockEntityInitializer.MOD_CHEST.get(), blockPos, blockState);
 
-        this.items = NonNullList.<ItemStack>withSize(55, ItemStack.EMPTY);
+        this.items = NonNullList.<ItemStack>withSize(54, ItemStack.EMPTY);
         this.blockToUse = BlockInitializer.MOD_CHEST_BLOCK::get;
     }
 
@@ -120,7 +120,7 @@ public class ModChestBlockEntity extends RandomizableContainerBlockEntity implem
         chestBlockEntity.chestLidController.tickLid();
     }
 
-    static void playSound(Level level, BlockPos blockPos, BlockState blockState, SoundEvent soundEvent) {
+    public static void playSound(Level level, BlockPos blockPos, BlockState blockState, SoundEvent soundEvent) {
         double d0 = (double) blockPos.getX() + 0.5D;
         double d1 = (double) blockPos.getY() + 0.5D;
         double d2 = (double) blockPos.getZ() + 0.5D;
@@ -159,7 +159,7 @@ public class ModChestBlockEntity extends RandomizableContainerBlockEntity implem
 
     @Override
     public void setItems(NonNullList<ItemStack> itemsIn) {
-        this.items = NonNullList.<ItemStack>withSize(55, ItemStack.EMPTY);
+        this.items = NonNullList.<ItemStack>withSize(54, ItemStack.EMPTY);
 
         for (int i = 0; i < itemsIn.size(); i++) {
             if (i < this.items.size()) {
@@ -202,6 +202,23 @@ public class ModChestBlockEntity extends RandomizableContainerBlockEntity implem
 
     public Block getBlockToUse() {
         return this.blockToUse.get();
+    }
+
+    /**
+     * Returns true if automation is allowed to insert the given stack (ignoring stack size) into the given slot. For
+     * guis use Slot.isItemValid
+     *
+     * @param pIndex
+     * @param pStack
+     */
+    @Override
+    public boolean canPlaceItem(int pIndex, ItemStack pStack) {
+        boolean isSameModid = Objects.equals(pStack.getItem().getCreatorModId(pStack), recordSlotInv.getItem(0).getItem().getCreatorModId(recordSlotInv.getItem(0)));
+        boolean isRecordEmpty = recordSlotInv.getItem(0).isEmpty();
+        if (!isRecordEmpty && !isSameModid){
+            return false;
+        }
+        return super.canPlaceItem(pIndex, pStack);
     }
 
     public static class RecordSlotInv implements Container{

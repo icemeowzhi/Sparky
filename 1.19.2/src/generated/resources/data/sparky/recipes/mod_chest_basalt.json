@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "C": {
+      "tag": "forge:ingots/copper"
+    },
+    "H": {
+      "tag": "forge:chests/wooden"
+    },
+    "S": {
+      "item": "minecraft:basalt"
+    }
+  },
+  "pattern": [
+    "SCS",
+    "CHC",
+    "SCS"
+  ],
+  "result": {
+    "item": "sparky:mod_chest"
+  }
+}

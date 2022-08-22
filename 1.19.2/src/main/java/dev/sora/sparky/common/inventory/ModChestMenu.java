@@ -1,8 +1,9 @@
 package dev.sora.sparky.common.inventory;
 
-import dev.sora.sparky.Sparky;
+import dev.sora.sparky.common.block.BlockInitializer;
 import dev.sora.sparky.common.block.entity.ModChestBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,11 +14,11 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.wrapper.InvWrapper;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 /**
  * @author icemeowzhi
@@ -35,7 +36,7 @@ public class ModChestMenu extends AbstractContainerMenu {
     protected ModChestMenu(@Nullable MenuType<?> menuType, int containerId, Inventory playerInventory, Container inventory, BlockEntity blockEntity) {
         super(menuType, containerId);
 
-        checkContainerSize(inventory, 55);
+        checkContainerSize(inventory, 54);
 
         this.container = inventory;
         this.blockEntity = blockEntity;
@@ -44,7 +45,23 @@ public class ModChestMenu extends AbstractContainerMenu {
 
         for (int chestRow = 0; chestRow < 6; chestRow++) {
             for (int chestCol = 0; chestCol < 9; chestCol++) {
-                this.addSlot(new Slot(inventory, chestCol + chestRow * 9, 8 + chestCol * 18, 18 + chestRow * 18));
+                this.addSlot(new Slot(inventory, chestCol + chestRow * 9, 8 + chestCol * 18, 18 + chestRow * 18){
+                    /**
+                     * Check if the stack is allowed to be placed in this slot, used for armor slots as well as furnace fuel.
+                     *
+                     * @param pStack
+                     */
+                    @Override
+                    public boolean mayPlace(ItemStack pStack) {
+                        boolean isSameModid = Objects.equals(pStack.getItem().getCreatorModId(pStack), recordSlot.getItem().getItem().getCreatorModId(recordSlot.getItem()));
+                        boolean isRecordEmpty = recordSlot.getItem().isEmpty();
+                        if (!isRecordEmpty && !isSameModid && blockEntity.getLevel()!=null){
+                            ModChestBlockEntity.playSound(blockEntity.getLevel(),blockEntity.getBlockPos(),blockEntity.getBlockState(), SoundEvents.EXPERIENCE_ORB_PICKUP);
+                            return false;
+                        }
+                        return super.mayPlace(pStack);
+                    }
+                });
             }
         }
 
@@ -59,13 +76,12 @@ public class ModChestMenu extends AbstractContainerMenu {
             this.addSlot(new Slot(playerInventory, hotHarSlot, 8 + hotHarSlot * 18, 198));
         }
 
-        recordSlot = new ItemHandlerGhost(new InvWrapper(((ModChestBlockEntity)blockEntity).recordSlotInv),RECORD_SLOT_ID,180,30);
-        //recordSlot = new Slot(inventory,RECORD_SLOT_ID,180,30);
+        recordSlot = new ItemHandlerGhost(new InvWrapper(((ModChestBlockEntity)blockEntity).recordSlotInv),0,180,30);
         this.addSlot(recordSlot);
     }
 
     public static ModChestMenu createContainer(int containerId, Inventory playerInventory) {
-        return new ModChestMenu(ContainerTypeInitializer.MOD_CHEST.get(),containerId,playerInventory,new SimpleContainer(55),new ModChestBlockEntity(BlockPos.ZERO, null));
+        return new ModChestMenu(ContainerTypeInitializer.MOD_CHEST.get(),containerId,playerInventory,new SimpleContainer(55),new ModChestBlockEntity(BlockPos.ZERO, BlockInitializer.MOD_CHEST_BLOCK.get().defaultBlockState()));
     }
 
     public static ModChestMenu createContainer(int containerId, Inventory playerInventory, Container inventory, BlockEntity blockEntity) {
@@ -128,6 +144,7 @@ public class ModChestMenu extends AbstractContainerMenu {
         this.container.stopOpen(playerIn);
     }
 
+
     public Container getContainer() {
         return this.container;
     }
@@ -186,5 +203,4 @@ public class ModChestMenu extends AbstractContainerMenu {
             slot.setChanged();
         }
     }
-
 }
